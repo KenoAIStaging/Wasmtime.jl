@@ -19,14 +19,14 @@ mutable struct Engine
 end
 
 """
-    Engine(; gc=false, reference_types=true, multi_memory=true, simd=true, function_references=false)
+    Engine(; gc=true, reference_types=true, multi_memory=true, simd=true, function_references=true)
 
 Create a new engine with custom configuration.
 Note: GC requires function_references to be enabled.
-GC is disabled by default as it's not fully implemented in all Wasmtime versions.
+Requires Wasmtime v27.0.0+ for full GC support.
 """
-function Engine(; gc::Bool=false, reference_types::Bool=true,
-                multi_memory::Bool=true, simd::Bool=true, function_references::Bool=false)
+function Engine(; gc::Bool=true, reference_types::Bool=true,
+                multi_memory::Bool=true, simd::Bool=true, function_references::Bool=true)
     config_ptr = ccall((:wasm_config_new, libwasmtime), WasmConfig, ())
 
     # GC requires function_references, so enable it if gc is enabled

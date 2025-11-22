@@ -77,55 +77,87 @@ using WasmCore
     end
 
     @testset "GC Feature Support" begin
-        # SKIPPED: This Wasmtime version doesn't have GC operators implemented
-        # Attempting to compile GC modules causes Wasmtime to panic (abort signal)
-        @test_skip "GC feature support requires newer Wasmtime version"
+        # Now enabled with Wasmtime v27.0.0+
+        # Test that GC-enabled engine can be created
+        engine = Engine(gc=true, reference_types=true)
+        @test engine isa Engine
 
-        # # Test that GC-enabled engine can be created
-        # engine = Engine(gc=true, reference_types=true)
-        # @test engine isa Engine
-        #
-        # # Create a struct-based module
-        # builder = ModuleBuilder()
-        #
-        # # Define a simple struct
-        # struct_type = StructType([
-        #     FieldType(Const, I32),
-        #     FieldType(Const, I32),
-        # ])
-        # struct_idx = add_or_get_type!(builder, struct_type)
-        #
-        # # Function that creates a struct
-        # func_type = FuncType([I32, I32], [RefType(false, ConcreteHeap(Int32(struct_idx)))])
-        # func_body = [
-        #     local_get(UInt32(0)),
-        #     local_get(UInt32(1)),
-        #     struct_new(UInt32(struct_idx))
-        # ]
-        # func_idx = func(builder, func_type, Tuple{UInt32, ValType}[], func_body)
-        # export_func(builder, "make_struct", UInt32(func_idx))
-        #
-        # wasm_module = build(builder)
-        # bytes = encode_module(wasm_module)
-        #
-        # # Try to compile GC module
-        # try
-        #     rt_module = compile(engine, bytes)
-        #     @test rt_module isa Wasmtime.Module
-        #     @test_skip "Full GC execution test (requires complete implementation)"
-        # catch e
-        #     @warn "GC module compilation failed (this may be expected): $e"
-        # end
+        # Create a struct-based module
+        builder = ModuleBuilder()
+
+        # Define a simple struct
+        struct_type = StructType([
+            FieldType(Const, I32),
+            FieldType(Const, I32),
+        ])
+        struct_idx = add_or_get_type!(builder, struct_type)
+
+        # Function that creates a struct
+        func_type = FuncType([I32, I32], [RefType(false, ConcreteHeap(Int32(struct_idx)))])
+        func_body = [
+            local_get(UInt32(0)),
+            local_get(UInt32(1)),
+            struct_new(UInt32(struct_idx))
+        ]
+        func_idx = func(builder, func_type, Tuple{UInt32, ValType}[], func_body)
+        export_func(builder, "make_struct", UInt32(func_idx))
+
+        wasm_module = build(builder)
+        bytes = encode_module(wasm_module)
+
+        # Compile GC module with Wasmtime v27+
+        rt_module = compile(engine, bytes)
+        @test rt_module isa Wasmtime.Module
+        @test_skip "Full GC execution test (requires instance support)"
     end
 
     @testset "Array GC Features" begin
-        # SKIPPED: This Wasmtime version doesn't have GC operators implemented
-        @test_skip "Array GC feature support requires newer Wasmtime version"
+        # Test array creation and manipulation
+        engine = Engine(gc=true)
+        builder = ModuleBuilder()
+
+        # Define array type
+        array_type = ArrayType(FieldType(Var, I32))
+        array_idx = add_or_get_type!(builder, array_type)
+
+        # Function to create an array
+        func_type = FuncType([I32], [RefType(false, ConcreteHeap(Int32(array_idx)))])
+        func_body = [
+            i32_const(Int32(0)),     # initial value
+            local_get(UInt32(0)),     # length from parameter
+            array_new(UInt32(array_idx))
+        ]
+        func_idx = func(builder, func_type, Tuple{UInt32, ValType}[], func_body)
+        export_func(builder, "make_array", UInt32(func_idx))
+
+        wasm_module = build(builder)
+        bytes = encode_module(wasm_module)
+
+        rt_module = compile(engine, bytes)
+        @test rt_module isa Wasmtime.Module
     end
 
     @testset "i31 Reference Type" begin
-        # SKIPPED: This Wasmtime version doesn't have GC operators implemented
-        @test_skip "i31 reference type requires newer Wasmtime version"
+        # Test i31 (unboxed 31-bit integers)
+        engine = Engine(gc=true)
+        builder = ModuleBuilder()
+
+        # Function: (func (param i32) (result i31ref)
+        #   local.get 0
+        #   ref.i31)
+        func_type = FuncType([I32], [i31ref])
+        func_body = [
+            local_get(UInt32(0)),
+            ref_i31()
+        ]
+        func_idx = func(builder, func_type, Tuple{UInt32, ValType}[], func_body)
+        export_func(builder, "make_i31", UInt32(func_idx))
+
+        wasm_module = build(builder)
+        bytes = encode_module(wasm_module)
+
+        rt_module = compile(engine, bytes)
+        @test rt_module isa Wasmtime.Module
     end
 
     @testset "Integration Test" begin
