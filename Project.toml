@@ -1,0 +1,21 @@
+name = "Wasmtime"
+uuid = "8c57c09a-8e52-4402-9c36-d63ee2b001d3"
+version = "0.1.0"
+authors = ["Keno Fischer <Keno@users.noreply.github.com>"]
+
+[deps]
+WasmCore = "cc691b97-3116-4ef5-8979-3e530037a328"
+Wasmtime_jll = "d20e7296-4f3e-515c-90b9-d2595a77bf72"
+
+[sources]
+WasmCore = {path = "/workspace/WasmCore"}
+
+[compat]
+julia = "1.6"
+
+[extras]
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test", "Pkg"]
