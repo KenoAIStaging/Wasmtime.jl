@@ -18,6 +18,6 @@ export Func, Memory, Global, Table
 export Val, I32Val, I64Val, F32Val, F64Val, RefVal
 export call, get_memory, read_memory, write_memory
 export compile, validate, instantiate
-export get_export, wasmtime_gc, set_fuel!, get_fuel
+export get_export, get_func, wasmtime_gc, set_fuel!, get_fuel
 
 end # module Wasmtime

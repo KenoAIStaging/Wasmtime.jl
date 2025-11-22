@@ -189,5 +189,81 @@ using WasmCore
 
             @info "Integration test completed successfully"
         end
+
+        @testset "Function Execution" begin
+            # Build a simple add function
+            engine = Engine()
+            store = Store(engine)
+            builder = ModuleBuilder()
+
+            func_type = FuncType([I32, I32], [I32])
+            func_body = [
+                local_get(UInt32(0)),
+                local_get(UInt32(1)),
+                i32_add()
+            ]
+            func_idx = func(builder, func_type, Tuple{UInt32, ValType}[], func_body)
+            export_func(builder, "add", UInt32(func_idx))
+
+            # Compile and instantiate
+            wasm_module = build(builder)
+            bytes = encode_module(wasm_module)
+            rt_module = compile(engine, bytes)
+            instance = instantiate(store, rt_module)
+
+            # Get and call the function
+            add_func = get_func(instance, "add")
+            result = call(add_func, Int32(5), Int32(7))
+
+            @test result isa I32Val
+            @test result.value == Int32(12)
+
+            @info "Successfully executed WASM function: 5 + 7 = $(result.value)"
+        end
+
+        @testset "Multiple Operations" begin
+            # Test multiply and subtract
+            engine = Engine()
+            store = Store(engine)
+            builder = ModuleBuilder()
+
+            # Multiply function
+            mul_type = FuncType([I32, I32], [I32])
+            mul_body = [
+                local_get(UInt32(0)),
+                local_get(UInt32(1)),
+                i32_mul()
+            ]
+            mul_idx = func(builder, mul_type, Tuple{UInt32, ValType}[], mul_body)
+            export_func(builder, "multiply", UInt32(mul_idx))
+
+            # Subtract function
+            sub_type = FuncType([I32, I32], [I32])
+            sub_body = [
+                local_get(UInt32(0)),
+                local_get(UInt32(1)),
+                i32_sub()
+            ]
+            sub_idx = func(builder, sub_type, Tuple{UInt32, ValType}[], sub_body)
+            export_func(builder, "subtract", UInt32(sub_idx))
+
+            # Compile and execute
+            wasm_module = build(builder)
+            bytes = encode_module(wasm_module)
+            rt_module = compile(engine, bytes)
+            instance = instantiate(store, rt_module)
+
+            # Test multiply: 6 * 7 = 42
+            mul_func = get_func(instance, "multiply")
+            mul_result = call(mul_func, Int32(6), Int32(7))
+            @test mul_result.value == Int32(42)
+
+            # Test subtract: 10 - 3 = 7
+            sub_func = get_func(instance, "subtract")
+            sub_result = call(sub_func, Int32(10), Int32(3))
+            @test sub_result.value == Int32(7)
+
+            @info "Multiple operations test passed: 6*7=$(mul_result.value), 10-3=$(sub_result.value)"
+        end
     end
 end

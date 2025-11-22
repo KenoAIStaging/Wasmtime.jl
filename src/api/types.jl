@@ -8,12 +8,33 @@ const WasmEngine = Ptr{Cvoid}
 const WasmtimeStore = Ptr{Cvoid}
 const WasmtimeContext = Ptr{Cvoid}
 const WasmtimeModule = Ptr{Cvoid}
-const WasmtimeInstance = Ptr{Cvoid}
-const WasmtimeFunc = Ptr{Cvoid}
-const WasmtimeMemory = Ptr{Cvoid}
-const WasmtimeGlobal = Ptr{Cvoid}
-const WasmtimeTable = Ptr{Cvoid}
 const WasmtimeError = Ptr{Cvoid}
+
+# Handle types (these are structs, not pointers)
+struct WasmtimeInstance
+    store_id::UInt64
+    index::Csize_t
+end
+
+struct WasmtimeFunc
+    store_id::UInt64
+    index::Csize_t
+end
+
+struct WasmtimeMemory
+    store_id::UInt64
+    index::Csize_t
+end
+
+struct WasmtimeGlobal
+    store_id::UInt64
+    index::Csize_t
+end
+
+struct WasmtimeTable
+    store_id::UInt64
+    index::Csize_t
+end
 
 # Byte vector type (used for byte arrays)
 struct ByteVec
@@ -100,6 +121,14 @@ end
 function get_f64(val::WasmVal)
     @assert val.kind == WASM_F64
     return reinterpret(Float64, val.of.i64)
+end
+
+# Wasmtime extern kind enum
+@enum WasmtimeExternKind::UInt8 begin
+    WASMTIME_EXTERN_FUNC = 0
+    WASMTIME_EXTERN_GLOBAL = 1
+    WASMTIME_EXTERN_TABLE = 2
+    WASMTIME_EXTERN_MEMORY = 3
 end
 
 # Wasmtime-specific error handling
